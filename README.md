@@ -41,3 +41,41 @@ To compile the code, use `nvcc`. You must link the `nvidia-ml` (for power monito
 
 ```bash
 nvcc main.cu -o alf_filter -lnvidia-ml -lpthread
+```
+
+*Note: If the compiler cannot find `nvidia-ml`, ensure that GPU drivers are correctly installed or adjust the library path.*
+
+## ▶️ How to Use
+
+1.  **Prepare the Input File:**
+    The code expects a file named **`original_0.csv`** in the same directory.
+    * **Format:** Integer pixel values (Luma) separated by commas or spaces.
+    * **Size:** Must contain exactly `width * height` values.
+
+2.  **Run the Program:**
+    ```bash
+     ./alf_filter
+    ```
+    *(On some Linux systems, running with `sudo` might be necessary to access NVML power metrics).*
+
+## 📂 Output Files
+
+After execution, the program will generate three CSV files for analysis:
+
+1.  **`imagem_final_filtrada.csv`**
+    * Contains the pixel values of the image after applying the ALF filter. Values will be in the range [0, 1023] (for 10-bit).
+
+2.  **`mapa_de_classes_final.csv`**
+    * A matrix the size of the image where each pixel contains the Class ID (0 to 24) assigned to its 4x4 block. This visualizes how the algorithm classified the texture of that region.
+
+3.  **`mapa_de_transformacao_final.csv`**
+    * A matrix containing the Geometric Transformation ID (0 to 3) applied to each block.
+    * `0`: No transformation.
+    * `1`: Diagonal Mirroring.
+    * `2`: Vertical Mirroring.
+    * `3`: Rotation.
+
+## 📝 Technical Details
+
+* **Classification Kernel:** Uses a *Gather* strategy in Shared Memory to access the necessary neighbors for the 8x8 window without repeated Global Memory accesses.
+* **Filtering Kernel:** Applies the 7x7 diamond-shaped filter using coordinates transformed by the `transform_coords_filter` function based on the classification result.
